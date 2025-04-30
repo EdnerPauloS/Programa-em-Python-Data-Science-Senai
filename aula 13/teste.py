@@ -1,130 +1,93 @@
+# ATIVIDADE 1
+# GERAR GRAFICO LEVANTAMENTO DE DADOS
+
+
+# Buscar todas as idades 
+
 from bs4 import BeautifulSoup
 import requests
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  
 import pandas as pd
+import tkinter as tk
 
 
+url = 'https://tabelatest.netlify.app/'
+response = requests.get(url)
 
-URL  =  'https://bea3853.github.io/PROCESSO_DATA_SCIENCE/'
-
-headers = {'User-Agent':'Mozilla/5.0'}
-
-response = requests.get(URL)
-
-soup = BeautifulSoup(response.text,'html.parser')
-
-# print(soup)
+soup = BeautifulSoup(response.text, 'html.parser')
+dados = soup.find('tbody').get_text()
+# print(dados)
 
 nome = []
-preco = []
-avaliacao = []
+idade = []
+cidade = []
+email = []
 
-for dado in soup.find_all('div', class_='produto'):
-    nome.append(dado.find('h2').text)
-    preco.append(float(dado.find('span', class_='preco').text.replace('R$','').replace('.','').replace(',','.')))
-    avaliacao.append(float(dado.find('span', class_ = 'avaliacao').text))
+tbody = soup.find('tbody')
 
-    
-# print(avaliacao)
+for linha in tbody.find_all('tr'):
+    colunas = linha.find_all('td')
+    if len (colunas)>=4:
+        nome.append(colunas[0].get_text(strip=True))
+        idade.append(int(colunas[1].get_text(strip=True)))
+        cidade.append(colunas[2].get_text(strip=True))
+        email.append(colunas[3].get_text(strip=True))
 
-# df
+# print(nome)
+# print(idade)
+# print(soup)
+
 df  = pd.DataFrame({
-    'Modelos':nome,
-    'Preço':preco,
-    'Avaliação':avaliacao
+    'Nome':nome,
+    'idade':idade,
+    'cidade':cidade,
+    'email': email
 })
-
-df.to_csv('tabela.csv', index=False)
-
-df  =  pd.read_csv('tabela.csv')
-
-# verificar se existem dados faltantes:
-
-df.isnull().sum()
-
-
-# limpeza - remover dados duplicados
-df['Modelos'][4] = 'Apple'
-# print(df)
-
-df = df.drop_duplicates()
-
-# print(df)
-df = df[df['Avaliação']>4]
+df=pd.DataFrame(df)
 
 # print(df)
 
-# print(df.describe())
+df.to_csv('tabela1.csv', index=False)
+
+df  =  pd.read_csv('tabela1.csv')
 
 
-df['Modelos'] = df['Modelos'].str.split().str[0]
+df = pd.read_csv('tabela1.csv')
 
-
-# print(df)
-
-
-# preco medio por marca 
-df.describe()
-# print()
-
-preco_media  =  df.groupby('Modelos')['Preço'].mean().sort_values()
-
-print('valores media :',preco_media)
-
-
-
-# visualização 
-
-
-plt.figure(figsize=(10,6))
-plt.hist(df['Preço'], bins = 20, color='green', edgecolor = 'black')
+plt.hist(df['idade'], bins=range(min(df['idade']), max(df['idade'])+1), edgecolor='black')
+plt.title('Distribuição de Idade')
+plt.xlabel('Idade')
+plt.ylabel('Frequência')
 plt.grid(True)
 plt.show()
 
-
 plt.figure(figsize=(10,6))
-preco_media.plot(kind = 'bar', color = 'red')
-plt.xlabel('Marca')
-plt.ylabel('Valores')
+plt.hist(df['idade'], bins=20, color='green', edgecolor='black')
+plt.title('Distribuição de Idades')
+plt.xlabel('Idade')
+plt.ylabel('Frequência')
 plt.grid(True)
-plt.xticks(rotation = 50)
 plt.show()
 
+idade_media = df.groupby('cidade')['idade'].mean().sort_values(ascending=False)
 
 plt.figure(figsize=(10,6))
-plt.scatter(df['Preço'], df['Avaliação'], color = 'green')
-plt.xlabel('Preço')
-plt.ylabel('Avaliação')
+idade_media.plot(kind='bar', color='red')
+plt.title('Média de Idade por Cidade')
+plt.xlabel('Cidade')
+plt.ylabel('Idade Média')
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.show()
+
+df['Tamanho_Nome'] = df['Nome'].apply(len)
+
+plt.figure(figsize=(10,6))
+plt.scatter(df['idade'], df['Tamanho_Nome'], color='green')
+plt.title('Relação entre Idade e Tamanho do Nome')
+plt.xlabel('Idade')
+plt.ylabel('Tamanho do Nome (caracteres)')
 plt.grid()
 plt.show()
 
-
-
-# insight:
-
-# a maioria dos celulares estão na faixa de 1000 à  3000
-# Poucos produtos Premiums
-
-
-# A ipple tem o preço mais alto 
-# Samsung e Xiomi dominam a faixa intermediaria 
-
-
-# Produtos mais caros nem sempre tem a melhor avaliação 
-# Boas opçoes de custo beneficio podem ser encontradasa na faixa de 1.500 à 2.500
-
-
-
-
-# ação a tomade de decisão: 
-
-# aumentar o estoque com melhor custo - beneficios (impactar aumento aumento de vendas)
-# Promoçoes estratéticas para produtos de avaliação média
-# monitorar concorrentes para ajustar os custos da ipple
-
-# proximos passos:
-# aplicar ml para prever tendencias de preço 
-
-
-
-
+df.to_csv('dados_extraidos.csv', index=False)
